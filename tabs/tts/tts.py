@@ -516,8 +516,13 @@ def tts_tab():
             gr.Info(message)
             return message, None
 
-        # Determine which mode to use based on the active tab index
-        if active_tab_index == 2:  # SRT to Speech tab
+        # Debug: print which mode is detected
+        print(f"[TTS] active_tab_index={active_tab_index}, srt_file_path={srt_file_path}")
+
+        # Determine which mode to use based on the active tab index OR srt_file_path
+        # Use SRT mode if active_tab is 2 OR if srt_file_path has a value
+        if active_tab_index == 2 or (srt_file_path and srt_file_path.strip()):
+            print(f"[TTS] Using SRT to Speech mode")
             return run_srt_tts_script(
                 srt_file_path,
                 tts_voice,
