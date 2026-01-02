@@ -449,8 +449,6 @@ def run_srt_tts_script(
     import edge_tts
     from rvc.lib.tools.srt_utils import (
         parse_srt,
-        detect_majority_language,
-        get_azure_voice_for_language,
         check_azure_api_available,
         combine_audio_segments_azure,
         combine_audio_segments_edge,
@@ -464,9 +462,6 @@ def run_srt_tts_script(
     
     if not segments:
         return "No subtitles found in SRT file.", None
-    
-    # Detect language and select voice
-    majority_language = detect_majority_language(segments)
     
     # Check Azure API availability
     azure_available, speech_key, service_region = check_azure_api_available()
@@ -488,7 +483,9 @@ def run_srt_tts_script(
     
     if use_azure:
         # Azure TTS mode with timing synchronization
-        azure_voice = get_azure_voice_for_language(majority_language)
+        # Convert EdgeTTS voice name to Azure voice name format
+        # EdgeTTS uses format like "zh-CN-YunxiNeural", Azure uses the same
+        azure_voice = tts_voice  # Use the voice selected in UI
         print(f"Using Azure TTS with voice: {azure_voice}")
         
         combined_audio = combine_audio_segments_azure(
