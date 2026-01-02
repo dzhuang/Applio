@@ -7,6 +7,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - "6969"
+    volumes:
+      - ./docker_data/logs:/app/logs
+      - ./docker_data/dataset:/app/dataset
+      - ./docker_data/weights:/app/assets/weights
+      - ./docker_data/models/pretraineds:/app/rvc/models/pretraineds
+      - ./docker_data/models/predictors:/app/rvc/models/predictors
+      - ./docker_data/models/embedders:/app/rvc/models/embedders
+      - ./docker_data/hf_cache:/app/hf_cache
     environment:
       # Azure Speech API for SRT timing sync (optional)
       - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY:-}

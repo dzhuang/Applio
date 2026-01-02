@@ -24,3 +24,7 @@ env
 venv
 .venv
 /.idea
+/.hf_cache
+/.pip_cache
+/.torch_cache
+/.uv_cache
