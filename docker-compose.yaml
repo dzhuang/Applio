@@ -7,10 +7,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - "6969"
+    environment:
+      # Azure Speech API for SRT timing sync (optional)
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY:-}
+      - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-}
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]

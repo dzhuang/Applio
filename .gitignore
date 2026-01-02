@@ -11,6 +11,7 @@
 *.bin
 *.wav
 *.txt
+!requirements.txt
 *.zip
 *.png
 *.safetensors
@@ -22,3 +23,4 @@ rvc/models
 env
 venv
 .venv
+/.idea

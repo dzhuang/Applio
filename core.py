@@ -410,6 +410,171 @@ def run_tts_script(
     )
 
 
+# SRT to Speech
+def run_srt_tts_script(
+    srt_file: str,
+    tts_voice: str,
+    use_azure_api: bool,
+    pitch: int,
+    index_rate: float,
+    volume_envelope: float,
+    protect: float,
+    f0_method: str,
+    output_tts_path: str,
+    output_rvc_path: str,
+    pth_path: str,
+    index_path: str,
+    split_audio: bool,
+    f0_autotune: bool,
+    f0_autotune_strength: float,
+    proposed_pitch: bool,
+    proposed_pitch_threshold: float,
+    clean_audio: bool,
+    clean_strength: float,
+    export_format: str,
+    embedder_model: str,
+    embedder_model_custom: str = None,
+    sid: int = 0,
+):
+    """
+    Convert SRT subtitles to speech audio with RVC voice conversion.
+    
+    Supports two modes:
+    - Azure API mode: Uses Azure TTS with prosody rate adjustment for timing sync
+    - EdgeTTS mode: Uses EdgeTTS to generate audio sequentially (no timing sync)
+    """
+    import asyncio
+    import tempfile
+    import edge_tts
+    from rvc.lib.tools.srt_utils import (
+        parse_srt,
+        detect_majority_language,
+        get_azure_voice_for_language,
+        check_azure_api_available,
+        combine_audio_segments_azure,
+        combine_audio_segments_edge,
+    )
+    
+    # Parse SRT file
+    try:
+        segments = parse_srt(srt_file)
+    except Exception as e:
+        return f"Error parsing SRT file: {e}", None
+    
+    if not segments:
+        return "No subtitles found in SRT file.", None
+    
+    # Detect language and select voice
+    majority_language = detect_majority_language(segments)
+    
+    # Check Azure API availability
+    azure_available, speech_key, service_region = check_azure_api_available()
+    
+    # Determine mode
+    use_azure = use_azure_api and azure_available
+    
+    if use_azure_api and not azure_available:
+        print("Warning: Azure API requested but not available. Using EdgeTTS.")
+    
+    # Clean up existing output file
+    if os.path.exists(output_tts_path) and os.path.abspath(output_tts_path).startswith(
+        os.path.abspath("assets")
+    ):
+        os.remove(output_tts_path)
+    
+    if use_azure:
+        # Azure TTS mode with timing synchronization
+        azure_voice = get_azure_voice_for_language(majority_language)
+        print(f"Using Azure TTS with voice: {azure_voice}")
+        
+        combined_audio = combine_audio_segments_azure(
+            segments,
+            speech_key,
+            service_region,
+            azure_voice
+        )
+        combined_audio.export(output_tts_path, format="wav")
+        
+    else:
+        # EdgeTTS mode (sequential, no timing sync)
+        print(f"Using EdgeTTS with voice: {tts_voice}")
+        
+        async def generate_edge_tts_segments():
+            temp_files = []
+            for i, (start, end, content) in enumerate(segments):
+                temp_file = tempfile.NamedTemporaryFile(
+                    delete=False, suffix=".mp3", prefix=f"srt_segment_{i}_"
+                )
+                temp_files.append(temp_file.name)
+                temp_file.close()
+                
+                try:
+                    communicate = edge_tts.Communicate(content, tts_voice)
+                    await communicate.save(temp_file.name)
+                except Exception as e:
+                    print(f"Error generating TTS for segment {i}: {e}")
+            
+            return temp_files
+        
+        # Run async TTS generation
+        temp_files = asyncio.run(generate_edge_tts_segments())
+        
+        # Combine audio segments
+        combined_audio = combine_audio_segments_edge(temp_files, segments)
+        combined_audio.export(output_tts_path, format="wav")
+        
+        # Clean up temp files
+        for temp_file in temp_files:
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+    
+    # Apply RVC voice conversion
+    infer_pipeline = import_voice_converter()
+    infer_pipeline.convert_audio(
+        pitch=pitch,
+        index_rate=index_rate,
+        volume_envelope=volume_envelope,
+        protect=protect,
+        f0_method=f0_method,
+        audio_input_path=output_tts_path,
+        audio_output_path=output_rvc_path,
+        model_path=pth_path,
+        index_path=index_path,
+        split_audio=split_audio,
+        f0_autotune=f0_autotune,
+        f0_autotune_strength=f0_autotune_strength,
+        proposed_pitch=proposed_pitch,
+        proposed_pitch_threshold=proposed_pitch_threshold,
+        clean_audio=clean_audio,
+        clean_strength=clean_strength,
+        export_format=export_format,
+        embedder_model=embedder_model,
+        embedder_model_custom=embedder_model_custom,
+        sid=sid,
+        formant_shifting=None,
+        formant_qfrency=None,
+        formant_timbre=None,
+        post_process=None,
+        reverb=None,
+        pitch_shift=None,
+        limiter=None,
+        gain=None,
+        distortion=None,
+        chorus=None,
+        bitcrush=None,
+        clipping=None,
+        compressor=None,
+        delay=None,
+        sliders=None,
+    )
+    
+    mode_str = "Azure TTS (timing sync)" if use_azure else "EdgeTTS (sequential)"
+    return f"SRT converted successfully using {mode_str}.", output_rvc_path.replace(
+        ".wav", f".{export_format.lower()}"
+    )
+
 # Preprocess
 def run_preprocess_script(
     model_name: str,

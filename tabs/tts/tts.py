@@ -9,7 +9,7 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 
 from assets.i18n.i18n import I18nAuto
-from core import run_tts_script
+from core import run_tts_script, run_srt_tts_script
 from tabs.settings.sections.filter import get_filter_trigger, load_config_filter
 from tabs.inference.inference import (
     change_choices,
@@ -44,6 +44,33 @@ def process_input(file_path):
     except UnicodeDecodeError:
         gr.Info(f"The file has to be in UTF-8 encoding.")
         return None, None
+
+
+def process_srt_input(file_path):
+    """Process uploaded SRT file."""
+    if file_path and file_path.endswith(".srt"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                file.read()
+            gr.Info("SRT file loaded successfully!")
+            return file_path, file_path
+        except UnicodeDecodeError:
+            gr.Info("The SRT file must be in UTF-8 encoding.")
+            return None, None
+    return None, None
+
+
+def check_azure_api_status(use_azure):
+    """Check Azure API availability and return status message."""
+    if use_azure:
+        speech_key = os.environ.get("AZURE_SPEECH_KEY", "")
+        service_region = os.environ.get("AZURE_SERVICE_REGION", "")
+        if speech_key and service_region:
+            return "✅ Azure API enabled. Timing sync is active."
+        else:
+            return "⚠️ AZURE_SPEECH_KEY or AZURE_SERVICE_REGION not found. Using EdgeTTS."
+    else:
+        return "ℹ️ Using EdgeTTS (no timing sync)"
 
 
 # TTS tab
@@ -150,6 +177,27 @@ def tts_tab():
                 value="",
                 interactive=True,
             )
+        with gr.Tab(label=i18n("SRT to Speech")):
+            srt_file = gr.File(
+                label=i18n("Upload SRT File"),
+                type="filepath",
+                file_types=[".srt"],
+            )
+            srt_file_path = gr.Textbox(
+                label=i18n("SRT File Path"),
+                placeholder=i18n("Path to the SRT subtitle file"),
+                value="",
+                interactive=True,
+            )
+            use_azure_api = gr.Checkbox(
+                label=i18n("Use Azure API (Timing Sync)"),
+                info=i18n("Enable to sync audio with subtitle timing. Requires AZURE_SPEECH_KEY env var."),
+                value=False,
+            )
+            srt_mode_status = gr.Markdown(
+                value=i18n("ℹ️ Using EdgeTTS (no timing sync)")
+            )
+
 
     with gr.Accordion(i18n("Advanced Settings"), open=False):
         with gr.Column():
@@ -436,6 +484,57 @@ def tts_tab():
             tts_text,
             tts_voice,
             tts_rate,
+            pitch,
+            index_rate,
+            rms_mix_rate,
+            protect,
+            f0_method,
+            output_tts_path,
+            output_rvc_path,
+            model_file,
+            index_file,
+            split_audio,
+            autotune,
+            autotune_strength,
+            proposed_pitch,
+            proposed_pitch_threshold,
+            clean_audio,
+            clean_strength,
+            export_format,
+            embedder_model,
+            embedder_model_custom,
+            sid,
+        ],
+        outputs=[vc_output1, vc_output2],
+    )
+    
+    # SRT to Speech event handlers
+    srt_file.upload(
+        fn=process_srt_input,
+        inputs=[srt_file],
+        outputs=[srt_file_path, srt_file],
+    )
+    
+    use_azure_api.change(
+        fn=check_azure_api_status,
+        inputs=[use_azure_api],
+        outputs=[srt_mode_status],
+    )
+    
+    def enforce_terms_srt(terms_accepted, *args):
+        if not terms_accepted:
+            message = "You must agree to the Terms of Use to proceed."
+            gr.Info(message)
+            return message, None
+        return run_srt_tts_script(*args)
+    
+    convert_button.click(
+        fn=enforce_terms_srt,
+        inputs=[
+            terms_checkbox,
+            srt_file_path,
+            tts_voice,
+            use_azure_api,
             pitch,
             index_rate,
             rms_mix_rate,
