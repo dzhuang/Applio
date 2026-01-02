@@ -414,6 +414,7 @@ def run_tts_script(
 def run_srt_tts_script(
     srt_file: str,
     tts_voice: str,
+    tts_rate: int,
     use_azure_api: bool,
     pitch: int,
     index_rate: float,
@@ -503,6 +504,7 @@ def run_srt_tts_script(
         print(f"Using EdgeTTS with voice: {tts_voice}")
         
         async def generate_edge_tts_segments():
+            rates = f"+{tts_rate}%" if tts_rate >= 0 else f"{tts_rate}%"
             temp_files = []
             for i, (start, end, content) in enumerate(segments):
                 temp_file = tempfile.NamedTemporaryFile(
@@ -512,7 +514,7 @@ def run_srt_tts_script(
                 temp_file.close()
                 
                 try:
-                    communicate = edge_tts.Communicate(content, tts_voice)
+                    communicate = edge_tts.Communicate(content, tts_voice, rate=rates)
                     await communicate.save(temp_file.name)
                 except Exception as e:
                     print(f"Error generating TTS for segment {i}: {e}")

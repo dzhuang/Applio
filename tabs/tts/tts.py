@@ -156,15 +156,17 @@ def tts_tab():
         interactive=True,
     )
 
-    with gr.Tabs():
-        with gr.Tab(label=i18n("Text to Speech")):
+    active_tab = gr.State(value=0)
+
+    with gr.Tabs() as tabs:
+        with gr.Tab(label=i18n("Text to Speech"), id=0):
             tts_text = gr.Textbox(
                 label=i18n("Text to Synthesize"),
                 info=i18n("Enter the text to synthesize."),
                 placeholder=i18n("Enter text to synthesize"),
                 lines=3,
             )
-        with gr.Tab(label=i18n("File to Speech")):
+        with gr.Tab(label=i18n("File to Speech"), id=1):
             txt_file = gr.File(
                 label=i18n("Upload a .txt file"),
                 type="filepath",
@@ -177,7 +179,7 @@ def tts_tab():
                 value="",
                 interactive=True,
             )
-        with gr.Tab(label=i18n("SRT to Speech")):
+        with gr.Tab(label=i18n("SRT to Speech"), id=2):
             srt_file = gr.File(
                 label=i18n("Upload SRT File"),
                 type="filepath",
@@ -197,6 +199,8 @@ def tts_tab():
             srt_mode_status = gr.Markdown(
                 value=i18n("ℹ️ Using EdgeTTS (no timing sync)")
             )
+    
+    tabs.select(fn=lambda evt: evt.index, outputs=[active_tab])
 
 
     with gr.Accordion(i18n("Advanced Settings"), open=False):
@@ -479,6 +483,7 @@ def tts_tab():
     # Combined conversion logic
     def unified_convert(
         terms_accepted,
+        active_tab_index,
         input_tts_path,
         tts_text,
         srt_file_path,
@@ -511,12 +516,12 @@ def tts_tab():
             gr.Info(message)
             return message, None
 
-        # Determine which mode to use based on non-empty inputs
-        # Priority: SRT > File > Text
-        if srt_file_path:
+        # Determine which mode to use based on the active tab index
+        if active_tab_index == 2:  # SRT to Speech tab
             return run_srt_tts_script(
                 srt_file_path,
                 tts_voice,
+                tts_rate,
                 use_azure_api,
                 pitch,
                 index_rate,
@@ -540,6 +545,8 @@ def tts_tab():
                 sid,
             )
         else:
+            # For index 0 (Text) and 1 (File)
+            # Adjust input_tts_path based on text synthesis if needed
             return run_tts_script(
                 input_tts_path,
                 tts_text,
@@ -571,6 +578,7 @@ def tts_tab():
         fn=unified_convert,
         inputs=[
             terms_checkbox,
+            active_tab,
             input_tts_path,
             tts_text,
             srt_file_path,
