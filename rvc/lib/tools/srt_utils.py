@@ -158,10 +158,41 @@ def get_audio_duration(audio_data: bytes) -> float:
         audio_data: Audio data as bytes
         
     Returns:
-        Duration in seconds
+        Duration in seconds, or 0 if audio is invalid
     """
-    audio = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")
-    return len(audio) / 1000.0
+    if not is_valid_wav_data(audio_data):
+        print("[Azure] Invalid WAV data, returning duration 0")
+        return 0
+    
+    try:
+        audio = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")
+        return len(audio) / 1000.0
+    except Exception as e:
+        print(f"[Azure] Error getting audio duration: {e}")
+        return 0
+
+
+def is_valid_wav_data(audio_data: bytes) -> bool:
+    """
+    Check if audio data is valid WAV format.
+    
+    Args:
+        audio_data: Audio data as bytes
+        
+    Returns:
+        True if valid WAV, False otherwise
+    """
+    if audio_data is None:
+        return False
+    if len(audio_data) < 44:  # WAV header is at least 44 bytes
+        return False
+    # Check for RIFF header
+    if audio_data[:4] != b'RIFF':
+        return False
+    # Check for WAVE format
+    if audio_data[8:12] != b'WAVE':
+        return False
+    return True
 
 
 def combine_audio_segments_azure(
@@ -189,11 +220,13 @@ def combine_audio_segments_azure(
     """
     combined = AudioSegment.silent(duration=0)
     total = len(segments)
+    success_count = 0
     
     for i, (start, end, content) in enumerate(segments):
         if progress_callback:
             progress_callback(i + 1, total)
-            
+        
+        print(f"[Azure] Processing segment {i}: '{content[:30]}...'")
         target_duration = (end - start).total_seconds()
         
         # Generate audio with default prosody rate to measure duration
@@ -201,38 +234,47 @@ def combine_audio_segments_azure(
         
         # Retry logic
         retries = 3
-        while audio_data is None and retries > 0:
-            print(f"Retrying for segment {i}...")
+        while (audio_data is None or not is_valid_wav_data(audio_data)) and retries > 0:
+            print(f"[Azure] Retrying for segment {i}... (attempt {4-retries}/3)")
             time.sleep(2)
             audio_data = text_to_speech_azure(content, speech_key, service_region, "1.0", voice_name)
             retries -= 1
         
-        if audio_data is None:
+        if audio_data is None or not is_valid_wav_data(audio_data):
             # Use silent segment if TTS fails
+            print(f"[Azure] Segment {i} failed, using silence")
             audio_segment = AudioSegment.silent(duration=int(target_duration * 1000))
         else:
             default_duration = get_audio_duration(audio_data)
-            speed_factor = default_duration / target_duration
             
-            # Clamp speed factor to reasonable range (0.5 to 3.0)
-            speed_factor = max(0.5, min(3.0, speed_factor))
-            prosody_rate = f"{speed_factor:.2f}"
-            
-            # Generate final audio with adjusted prosody rate
-            audio_data = text_to_speech_azure(content, speech_key, service_region, prosody_rate, voice_name)
-            
-            # Retry if needed
-            retries = 3
-            while audio_data is None and retries > 0:
-                print(f"Retrying for segment {i} with prosody rate {prosody_rate}...")
-                time.sleep(2)
-                audio_data = text_to_speech_azure(content, speech_key, service_region, prosody_rate, voice_name)
-                retries -= 1
-            
-            if audio_data is None:
+            if default_duration <= 0:
+                print(f"[Azure] Segment {i} has invalid duration, using silence")
                 audio_segment = AudioSegment.silent(duration=int(target_duration * 1000))
             else:
-                audio_segment = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")
+                speed_factor = default_duration / target_duration
+                
+                # Clamp speed factor to reasonable range (0.5 to 3.0)
+                speed_factor = max(0.5, min(3.0, speed_factor))
+                prosody_rate = f"{speed_factor:.2f}"
+                
+                # Generate final audio with adjusted prosody rate
+                audio_data = text_to_speech_azure(content, speech_key, service_region, prosody_rate, voice_name)
+                
+                # Retry if needed
+                retries = 3
+                while (audio_data is None or not is_valid_wav_data(audio_data)) and retries > 0:
+                    print(f"[Azure] Retrying for segment {i} with prosody rate {prosody_rate}...")
+                    time.sleep(2)
+                    audio_data = text_to_speech_azure(content, speech_key, service_region, prosody_rate, voice_name)
+                    retries -= 1
+                
+                if audio_data is None or not is_valid_wav_data(audio_data):
+                    print(f"[Azure] Segment {i} final attempt failed, using silence")
+                    audio_segment = AudioSegment.silent(duration=int(target_duration * 1000))
+                else:
+                    audio_segment = AudioSegment.from_file(io.BytesIO(audio_data), format="wav")
+                    success_count += 1
+                    print(f"[Azure] Segment {i} generated: {len(audio_segment)}ms")
         
         # Add silence to align with start time
         start_ms = int(start.total_seconds() * 1000)
@@ -243,6 +285,7 @@ def combine_audio_segments_azure(
         
         combined += audio_segment
     
+    print(f"[Azure] Generated {success_count}/{total} segments successfully")
     return combined
 
 
