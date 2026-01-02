@@ -47,3 +47,10 @@ pypresence
 beautifulsoup4
 sounddevice
 webrtcvad
+
+# SRT to Speech feature
+azure-cognitiveservices-speech
+srt
+langdetect
+pydub
+gtts
