@@ -258,27 +258,51 @@ def combine_audio_segments_edge(
     Returns:
         Combined AudioSegment
     """
-    combined = AudioSegment.silent(duration=0)
+    combined = None
+    total_loaded = 0
+    
+    print(f"[SRT] Starting to combine {len(audio_files)} audio files")
     
     for i, audio_file in enumerate(audio_files):
+        audio_segment = None
+        
         if os.path.exists(audio_file):
-            try:
-                audio_segment = AudioSegment.from_file(audio_file)
-                print(f"[SRT] Segment {i}: loaded {len(audio_segment)}ms")
-            except Exception as e:
-                print(f"[SRT] Error loading segment {i}: {e}")
-                # Use 1 second of silence as fallback
-                audio_segment = AudioSegment.silent(duration=1000)
+            file_size = os.path.getsize(audio_file)
+            print(f"[SRT] Segment {i}: file size = {file_size} bytes")
+            
+            if file_size > 500:  # At least 500 bytes for valid audio
+                try:
+                    audio_segment = AudioSegment.from_file(audio_file, format="mp3")
+                    duration_ms = len(audio_segment)
+                    print(f"[SRT] Segment {i}: loaded successfully, duration = {duration_ms}ms")
+                    total_loaded += 1
+                except Exception as e:
+                    print(f"[SRT] Segment {i}: Error loading - {e}")
+                    audio_segment = None
+            else:
+                print(f"[SRT] Segment {i}: file too small, skipping")
         else:
-            print(f"[SRT] Segment {i}: file not found, using silence")
-            audio_segment = AudioSegment.silent(duration=1000)
+            print(f"[SRT] Segment {i}: file not found")
         
-        # Add a small gap between segments for natural speech
-        if len(combined) > 0:
-            gap = AudioSegment.silent(duration=300)  # 300ms gap
-            combined += gap
+        # Skip invalid segments
+        if audio_segment is None or len(audio_segment) == 0:
+            continue
         
-        combined += audio_segment
+        # Combine
+        if combined is None:
+            combined = audio_segment
+        else:
+            # Add a small gap between segments
+            gap = AudioSegment.silent(duration=300)
+            combined = combined + gap + audio_segment
+    
+    # Handle case where no segments were loaded
+    if combined is None:
+        print("[SRT] WARNING: No segments loaded, returning 1 second of silence")
+        combined = AudioSegment.silent(duration=1000)
+    
+    print(f"[SRT] Final combined duration: {len(combined)}ms ({len(combined)/1000:.1f} seconds)")
+    print(f"[SRT] Successfully loaded {total_loaded}/{len(audio_files)} segments")
     
     return combined
 
