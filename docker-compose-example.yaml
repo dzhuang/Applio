@@ -19,6 +19,8 @@ services:
       # Azure Speech API for SRT timing sync (optional)
       - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY:-}
       - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-}
+      # TTS cache size (optional)
+      - SRT_TTS_CACHE_SIZE_MB=${SRT_TTS_CACHE_SIZE_MB:-512}
     deploy:
       resources:
         reservations:

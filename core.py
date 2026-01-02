@@ -436,6 +436,8 @@ def run_srt_tts_script(
     embedder_model: str,
     embedder_model_custom: str = None,
     sid: int = 0,
+    use_cache: bool = True,
+    cache_size_mb: int = 512,
 ):
     """
     Convert SRT subtitles to speech audio with RVC voice conversion.
@@ -505,10 +507,15 @@ def run_srt_tts_script(
         # EdgeTTS mode (sequential, no timing sync)
         print(f"Using EdgeTTS with voice: {tts_voice}")
         
+        # Import cache utilities
+        from rvc.lib.tools.tts_cache import get_cached_audio, save_to_cache, get_cache_key, get_cache_path
+        
         async def generate_edge_tts_segments():
             rates = f"+{tts_rate}%" if tts_rate >= 0 else f"{tts_rate}%"
             temp_files = []
             success_count = 0
+            cache_hits = 0
+            
             for i, (start, end, content) in enumerate(segments):
                 temp_file = tempfile.NamedTemporaryFile(
                     delete=False, suffix=".mp3", prefix=f"srt_segment_{i}_"
@@ -517,6 +524,17 @@ def run_srt_tts_script(
                 temp_file.close()
                 
                 try:
+                    # Check cache first
+                    cached_audio = get_cached_audio(content, tts_voice, rates, "edge", "mp3")
+                    if cached_audio:
+                        # Write cached audio to temp file
+                        with open(temp_file.name, 'wb') as f:
+                            f.write(cached_audio)
+                        cache_hits += 1
+                        success_count += 1
+                        continue
+                    
+                    # Generate new audio
                     print(f"[SRT] Generating segment {i}: '{content[:30]}...' with rate={rates}")
                     communicate = edge_tts.Communicate(content, tts_voice, rate=rates)
                     await communicate.save(temp_file.name)
@@ -527,12 +545,16 @@ def run_srt_tts_script(
                         print(f"[SRT] Segment {i} saved: {file_size} bytes")
                         if file_size > 1000:
                             success_count += 1
+                            # Save to cache
+                            with open(temp_file.name, 'rb') as f:
+                                audio_data = f.read()
+                            save_to_cache(content, tts_voice, rates, "edge", audio_data, "mp3", 2048)
                     else:
                         print(f"[SRT] Segment {i} file not found!")
                 except Exception as e:
                     print(f"[SRT] Error generating TTS for segment {i}: {e}")
             
-            print(f"[SRT] Generated {success_count}/{len(segments)} segments successfully")
+            print(f"[SRT] Generated {success_count}/{len(segments)} segments ({cache_hits} cache hits)")
             return temp_files
         
         # Run async TTS generation

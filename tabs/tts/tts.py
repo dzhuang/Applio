@@ -224,6 +224,22 @@ def tts_tab():
                 value="WAV",
                 interactive=True,
             )
+            
+            # Cache settings
+            with gr.Row():
+                use_cache = gr.Checkbox(
+                    label=i18n("Use TTS Cache"),
+                    info=i18n("Cache TTS audio segments to speed up repeated conversions."),
+                    value=True,
+                )
+                cache_size_mb = gr.Number(
+                    label=i18n("Max Cache Size (MB)"),
+                    info=i18n("Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var."),
+                    value=512,
+                    minimum=100,
+                    maximum=10240,
+                    precision=0,
+                )
             sid = gr.Dropdown(
                 label=i18n("Speaker ID"),
                 info=i18n("Select the speaker ID to use for the conversion."),
@@ -510,6 +526,8 @@ def tts_tab():
         embedder_model,
         embedder_model_custom,
         sid,
+        use_cache,
+        cache_size_mb,
     ):
         if not terms_accepted:
             message = "You must agree to the Terms of Use to proceed."
@@ -548,6 +566,8 @@ def tts_tab():
                 embedder_model,
                 embedder_model_custom,
                 sid,
+                use_cache,
+                int(cache_size_mb),
             )
         else:
             # For index 0 (Text) and 1 (File)
@@ -610,6 +630,8 @@ def tts_tab():
             embedder_model,
             embedder_model_custom,
             sid,
+            use_cache,
+            cache_size_mb,
         ],
         outputs=[vc_output1, vc_output2],
     )

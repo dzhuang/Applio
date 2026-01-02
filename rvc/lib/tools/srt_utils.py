@@ -95,7 +95,9 @@ def text_to_speech_azure(
     speech_key: str,
     service_region: str,
     prosody_rate: str,
-    voice_name: str
+    voice_name: str,
+    use_cache: bool = True,
+    max_cache_size_mb: int = 512
 ) -> bytes:
     """
     Generate speech audio using Azure TTS with prosody rate adjustment.
@@ -106,10 +108,19 @@ def text_to_speech_azure(
         service_region: Azure service region
         prosody_rate: Speed factor (e.g., "1.0", "1.5")
         voice_name: Azure voice name
+        use_cache: Whether to use caching
+        max_cache_size_mb: Maximum cache size in MB
         
     Returns:
         Audio data as bytes, or None if failed
     """
+    # Check cache first
+    if use_cache:
+        from rvc.lib.tools.tts_cache import get_cached_audio, save_to_cache
+        cached = get_cached_audio(text, voice_name, prosody_rate, "azure", "wav")
+        if cached:
+            return cached
+    
     if not AZURE_AVAILABLE:
         print("Azure Speech SDK not available")
         return None
@@ -139,7 +150,11 @@ def text_to_speech_azure(
     result = synthesizer.speak_ssml_async(ssml_string).get()
 
     if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-        return result.audio_data
+        audio_data = result.audio_data
+        # Save to cache
+        if use_cache and audio_data:
+            save_to_cache(text, voice_name, prosody_rate, "azure", audio_data, "wav", max_cache_size_mb)
+        return audio_data
     elif result.reason == speechsdk.ResultReason.Canceled:
         cancellation_details = result.cancellation_details
         print(f"Speech synthesis canceled: {cancellation_details.reason}")
