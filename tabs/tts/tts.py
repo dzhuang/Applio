@@ -200,7 +200,7 @@ def tts_tab():
                 value=i18n("ℹ️ Using EdgeTTS (no timing sync)")
             )
     
-    tabs.select(fn=lambda evt: evt.index, outputs=[active_tab])
+    tabs.select(fn=lambda evt: evt.index if evt is not None else 0, outputs=[active_tab])
 
 
     with gr.Accordion(i18n("Advanced Settings"), open=False):
