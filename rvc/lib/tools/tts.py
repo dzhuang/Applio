@@ -2,6 +2,7 @@ import sys
 import asyncio
 import edge_tts
 import os
+from pydub import AudioSegment
 
 
 async def main():
@@ -21,8 +22,18 @@ async def main():
         except UnicodeDecodeError:
             with open(tts_file, "r") as file:
                 text = file.read()
-    await edge_tts.Communicate(text, voice, rate=rates).save(output_file)
-    # print(f"TTS with {voice} completed. Output TTS file: '{output_file}'")
+    
+    # EdgeTTS outputs MP3 format, save to temp file first
+    temp_mp3 = output_file.replace(".wav", "_temp.mp3")
+    await edge_tts.Communicate(text, voice, rate=rates).save(temp_mp3)
+    
+    # Convert MP3 to WAV for RVC compatibility
+    audio = AudioSegment.from_mp3(temp_mp3)
+    audio.export(output_file, format="wav")
+    
+    # Clean up temp file
+    if os.path.exists(temp_mp3):
+        os.remove(temp_mp3)
 
 
 if __name__ == "__main__":
