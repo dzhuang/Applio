@@ -488,13 +488,18 @@ def run_srt_tts_script(
         azure_voice = tts_voice  # Use the voice selected in UI
         print(f"Using Azure TTS with voice: {azure_voice}")
         
-        combined_audio = combine_audio_segments_azure(
-            segments,
-            speech_key,
-            service_region,
-            azure_voice
-        )
-        combined_audio.export(srt_output_tts_path, format="wav")
+        try:
+            combined_audio = combine_audio_segments_azure(
+                segments,
+                speech_key,
+                service_region,
+                azure_voice
+            )
+            combined_audio.export(srt_output_tts_path, format="wav")
+        except Exception as e:
+            error_msg = f"Azure TTS Error: {str(e)}"
+            print(error_msg)
+            return error_msg, None
         
     else:
         # EdgeTTS mode (sequential, no timing sync)
@@ -554,44 +559,49 @@ def run_srt_tts_script(
     print(f"Applying RVC to {srt_output_tts_path}...")
     
     # Apply RVC voice conversion
-    infer_pipeline = import_voice_converter()
-    infer_pipeline.convert_audio(
-        pitch=pitch,
-        index_rate=index_rate,
-        volume_envelope=volume_envelope,
-        protect=protect,
-        f0_method=f0_method,
-        audio_input_path=srt_output_tts_path,
-        audio_output_path=output_rvc_path,
-        model_path=pth_path,
-        index_path=index_path,
-        split_audio=split_audio,
-        f0_autotune=f0_autotune,
-        f0_autotune_strength=f0_autotune_strength,
-        proposed_pitch=proposed_pitch,
-        proposed_pitch_threshold=proposed_pitch_threshold,
-        clean_audio=clean_audio,
-        clean_strength=clean_strength,
-        export_format=export_format,
-        embedder_model=embedder_model,
-        embedder_model_custom=embedder_model_custom,
-        sid=sid,
-        formant_shifting=None,
-        formant_qfrency=None,
-        formant_timbre=None,
-        post_process=None,
-        reverb=None,
-        pitch_shift=None,
-        limiter=None,
-        gain=None,
-        distortion=None,
-        chorus=None,
-        bitcrush=None,
-        clipping=None,
-        compressor=None,
-        delay=None,
-        sliders=None,
-    )
+    try:
+        infer_pipeline = import_voice_converter()
+        infer_pipeline.convert_audio(
+            pitch=pitch,
+            index_rate=index_rate,
+            volume_envelope=volume_envelope,
+            protect=protect,
+            f0_method=f0_method,
+            audio_input_path=srt_output_tts_path,
+            audio_output_path=output_rvc_path,
+            model_path=pth_path,
+            index_path=index_path,
+            split_audio=split_audio,
+            f0_autotune=f0_autotune,
+            f0_autotune_strength=f0_autotune_strength,
+            proposed_pitch=proposed_pitch,
+            proposed_pitch_threshold=proposed_pitch_threshold,
+            clean_audio=clean_audio,
+            clean_strength=clean_strength,
+            export_format=export_format,
+            embedder_model=embedder_model,
+            embedder_model_custom=embedder_model_custom,
+            sid=sid,
+            formant_shifting=None,
+            formant_qfrency=None,
+            formant_timbre=None,
+            post_process=None,
+            reverb=None,
+            pitch_shift=None,
+            limiter=None,
+            gain=None,
+            distortion=None,
+            chorus=None,
+            bitcrush=None,
+            clipping=None,
+            compressor=None,
+            delay=None,
+            sliders=None,
+        )
+    except Exception as e:
+        error_msg = f"RVC Conversion Error: {str(e)}"
+        print(error_msg)
+        return error_msg, None
     
     mode_str = "Azure TTS (timing sync)" if use_azure else "EdgeTTS (sequential)"
     return f"SRT converted successfully using {mode_str}.", output_rvc_path.replace(
