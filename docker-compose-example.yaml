@@ -10,6 +10,7 @@ services:
     volumes:
       - ./docker_data/logs:/app/logs
       - ./docker_data/dataset:/app/dataset
+      - ./docker_data/tts_cache:/app/assets/tts_cache
       - ./docker_data/weights:/app/assets/weights
       - ./docker_data/models/pretraineds:/app/rvc/models/pretraineds
       - ./docker_data/models/predictors:/app/rvc/models/predictors
