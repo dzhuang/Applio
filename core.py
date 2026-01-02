@@ -476,11 +476,14 @@ def run_srt_tts_script(
     if use_azure_api and not azure_available:
         print("Warning: Azure API requested but not available. Using EdgeTTS.")
     
+    # Use a unique output path for SRT to avoid conflict with standard TTS
+    srt_output_tts_path = output_tts_path.replace(".wav", "_srt.wav")
+    
     # Clean up existing output file
-    if os.path.exists(output_tts_path) and os.path.abspath(output_tts_path).startswith(
+    if os.path.exists(srt_output_tts_path) and os.path.abspath(srt_output_tts_path).startswith(
         os.path.abspath("assets")
     ):
-        os.remove(output_tts_path)
+        os.remove(srt_output_tts_path)
     
     if use_azure:
         # Azure TTS mode with timing synchronization
@@ -493,7 +496,7 @@ def run_srt_tts_script(
             service_region,
             azure_voice
         )
-        combined_audio.export(output_tts_path, format="wav")
+        combined_audio.export(srt_output_tts_path, format="wav")
         
     else:
         # EdgeTTS mode (sequential, no timing sync)
@@ -521,7 +524,7 @@ def run_srt_tts_script(
         
         # Combine audio segments
         combined_audio = combine_audio_segments_edge(temp_files, segments)
-        combined_audio.export(output_tts_path, format="wav")
+        combined_audio.export(srt_output_tts_path, format="wav")
         
         # Clean up temp files
         for temp_file in temp_files:
@@ -529,6 +532,12 @@ def run_srt_tts_script(
                 os.remove(temp_file)
             except:
                 pass
+    
+    # Verify file was created
+    if not os.path.exists(srt_output_tts_path):
+        return f"Error: Failed to create TTS audio at {srt_output_tts_path}", None
+
+    print(f"Applying RVC to {srt_output_tts_path}...")
     
     # Apply RVC voice conversion
     infer_pipeline = import_voice_converter()
@@ -538,7 +547,7 @@ def run_srt_tts_script(
         volume_envelope=volume_envelope,
         protect=protect,
         f0_method=f0_method,
-        audio_input_path=output_tts_path,
+        audio_input_path=srt_output_tts_path,
         audio_output_path=output_rvc_path,
         model_path=pth_path,
         index_path=index_path,

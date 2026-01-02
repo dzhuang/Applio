@@ -476,64 +476,106 @@ def tts_tab():
         inputs=[],
         outputs=[embedder_model_custom],
     )
-    convert_button.click(
-        fn=enforce_terms,
-        inputs=[
-            terms_checkbox,
-            input_tts_path,
-            tts_text,
-            tts_voice,
-            tts_rate,
-            pitch,
-            index_rate,
-            rms_mix_rate,
-            protect,
-            f0_method,
-            output_tts_path,
-            output_rvc_path,
-            model_file,
-            index_file,
-            split_audio,
-            autotune,
-            autotune_strength,
-            proposed_pitch,
-            proposed_pitch_threshold,
-            clean_audio,
-            clean_strength,
-            export_format,
-            embedder_model,
-            embedder_model_custom,
-            sid,
-        ],
-        outputs=[vc_output1, vc_output2],
-    )
-    
-    # SRT to Speech event handlers
-    srt_file.upload(
-        fn=process_srt_input,
-        inputs=[srt_file],
-        outputs=[srt_file_path, srt_file],
-    )
-    
-    use_azure_api.change(
-        fn=check_azure_api_status,
-        inputs=[use_azure_api],
-        outputs=[srt_mode_status],
-    )
-    
-    def enforce_terms_srt(terms_accepted, *args):
+    # Combined conversion logic
+    def unified_convert(
+        terms_accepted,
+        input_tts_path,
+        tts_text,
+        srt_file_path,
+        tts_voice,
+        tts_rate,
+        use_azure_api,
+        pitch,
+        index_rate,
+        rms_mix_rate,
+        protect,
+        f0_method,
+        output_tts_path,
+        output_rvc_path,
+        model_file,
+        index_file,
+        split_audio,
+        autotune,
+        autotune_strength,
+        proposed_pitch,
+        proposed_pitch_threshold,
+        clean_audio,
+        clean_strength,
+        export_format,
+        embedder_model,
+        embedder_model_custom,
+        sid,
+    ):
         if not terms_accepted:
             message = "You must agree to the Terms of Use to proceed."
             gr.Info(message)
             return message, None
-        return run_srt_tts_script(*args)
-    
+
+        # Determine which mode to use based on non-empty inputs
+        # Priority: SRT > File > Text
+        if srt_file_path:
+            return run_srt_tts_script(
+                srt_file_path,
+                tts_voice,
+                use_azure_api,
+                pitch,
+                index_rate,
+                rms_mix_rate,
+                protect,
+                f0_method,
+                output_tts_path,
+                output_rvc_path,
+                model_file,
+                index_file,
+                split_audio,
+                autotune,
+                autotune_strength,
+                proposed_pitch,
+                proposed_pitch_threshold,
+                clean_audio,
+                clean_strength,
+                export_format,
+                embedder_model,
+                embedder_model_custom,
+                sid,
+            )
+        else:
+            return run_tts_script(
+                input_tts_path,
+                tts_text,
+                tts_voice,
+                tts_rate,
+                pitch,
+                index_rate,
+                rms_mix_rate,
+                protect,
+                f0_method,
+                output_tts_path,
+                output_rvc_path,
+                model_file,
+                index_file,
+                split_audio,
+                autotune,
+                autotune_strength,
+                proposed_pitch,
+                proposed_pitch_threshold,
+                clean_audio,
+                clean_strength,
+                export_format,
+                embedder_model,
+                embedder_model_custom,
+                sid,
+            )
+
     convert_button.click(
-        fn=enforce_terms_srt,
+        fn=unified_convert,
         inputs=[
             terms_checkbox,
+            input_tts_path,
+            tts_text,
             srt_file_path,
             tts_voice,
+            tts_rate,
             use_azure_api,
             pitch,
             index_rate,
@@ -557,4 +599,17 @@ def tts_tab():
             sid,
         ],
         outputs=[vc_output1, vc_output2],
+    )
+
+    # SRT to Speech event handlers
+    srt_file.upload(
+        fn=process_srt_input,
+        inputs=[srt_file],
+        outputs=[srt_file_path, srt_file],
+    )
+
+    use_azure_api.change(
+        fn=check_azure_api_status,
+        inputs=[use_azure_api],
+        outputs=[srt_mode_status],
     )
