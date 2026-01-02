@@ -1,0 +1,24 @@
+# 基于现有的镜像构建
+FROM applio-applio:latest
+
+# 设置工作目录
+WORKDIR /app
+
+# 确保环境变量正确指向虚拟环境
+ENV PATH="/app/.venv/bin:$PATH"
+
+# 复制新增加的工具文件、修改过的核心逻辑和UI代码
+COPY rvc/lib/tools/srt_utils.py /app/rvc/lib/tools/srt_utils.py
+COPY rvc/lib/tools/tts.py /app/rvc/lib/tools/tts.py
+COPY core.py /app/core.py
+COPY tabs/tts/tts.py /app/tabs/tts/tts.py
+COPY requirements.txt /app/requirements.txt
+
+# 安装新增加的依赖项
+# 这里的 .venv 已经在原有镜像中激活（通过 ENV PATH 设置）
+RUN pip install --no-cache-dir srt langdetect azure-cognitiveservices-speech pydub gtts
+
+# (可选) 如果你想保持 requirements.txt 里的所有版本一致
+# RUN pip install --no-cache-dir -r requirements.txt
+
+# 启动命令保持不变 (由基底镜像提供)
