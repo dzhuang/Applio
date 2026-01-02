@@ -117,6 +117,11 @@ def text_to_speech_azure(
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
     speech_config.speech_synthesis_voice_name = voice_name
     
+    # Set output format to WAV (16kHz, 16-bit, mono)
+    speech_config.set_speech_synthesis_output_format(
+        speechsdk.SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm
+    )
+    
     # Build SSML with prosody rate
     lang_code = voice_name.split('-')[0] + '-' + voice_name.split('-')[1]
     ssml_string = f"""
