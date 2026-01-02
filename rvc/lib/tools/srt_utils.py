@@ -248,29 +248,35 @@ def combine_audio_segments_edge(
     """
     Combine audio files sequentially (EdgeTTS mode, no timing sync).
     
+    Note: Unlike Azure mode, EdgeTTS mode concatenates audio segments
+    sequentially without attempting to sync with SRT timestamps.
+    
     Args:
         audio_files: List of audio file paths
-        segments: List of (start, end, content) tuples (for timing reference)
+        segments: List of (start, end, content) tuples (not used for timing)
         
     Returns:
         Combined AudioSegment
     """
     combined = AudioSegment.silent(duration=0)
     
-    for i, (audio_file, (start, end, _)) in enumerate(zip(audio_files, segments)):
+    for i, audio_file in enumerate(audio_files):
         if os.path.exists(audio_file):
-            audio_segment = AudioSegment.from_file(audio_file)
+            try:
+                audio_segment = AudioSegment.from_file(audio_file)
+                print(f"[SRT] Segment {i}: loaded {len(audio_segment)}ms")
+            except Exception as e:
+                print(f"[SRT] Error loading segment {i}: {e}")
+                # Use 1 second of silence as fallback
+                audio_segment = AudioSegment.silent(duration=1000)
         else:
-            # Use silent segment if file missing
-            target_duration = (end - start).total_seconds()
-            audio_segment = AudioSegment.silent(duration=int(target_duration * 1000))
+            print(f"[SRT] Segment {i}: file not found, using silence")
+            audio_segment = AudioSegment.silent(duration=1000)
         
-        # Add silence to align with start time
-        start_ms = int(start.total_seconds() * 1000)
-        current_length = len(combined)
-        if start_ms > current_length:
-            silence = AudioSegment.silent(duration=start_ms - current_length)
-            combined += silence
+        # Add a small gap between segments for natural speech
+        if len(combined) > 0:
+            gap = AudioSegment.silent(duration=300)  # 300ms gap
+            combined += gap
         
         combined += audio_segment
     
