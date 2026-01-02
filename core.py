@@ -506,6 +506,7 @@ def run_srt_tts_script(
         async def generate_edge_tts_segments():
             rates = f"+{tts_rate}%" if tts_rate >= 0 else f"{tts_rate}%"
             temp_files = []
+            success_count = 0
             for i, (start, end, content) in enumerate(segments):
                 temp_file = tempfile.NamedTemporaryFile(
                     delete=False, suffix=".mp3", prefix=f"srt_segment_{i}_"
@@ -514,19 +515,33 @@ def run_srt_tts_script(
                 temp_file.close()
                 
                 try:
+                    print(f"[SRT] Generating segment {i}: '{content[:30]}...' with rate={rates}")
                     communicate = edge_tts.Communicate(content, tts_voice, rate=rates)
                     await communicate.save(temp_file.name)
+                    
+                    # Verify file was created and has content
+                    if os.path.exists(temp_file.name):
+                        file_size = os.path.getsize(temp_file.name)
+                        print(f"[SRT] Segment {i} saved: {file_size} bytes")
+                        if file_size > 1000:
+                            success_count += 1
+                    else:
+                        print(f"[SRT] Segment {i} file not found!")
                 except Exception as e:
-                    print(f"Error generating TTS for segment {i}: {e}")
+                    print(f"[SRT] Error generating TTS for segment {i}: {e}")
             
+            print(f"[SRT] Generated {success_count}/{len(segments)} segments successfully")
             return temp_files
         
         # Run async TTS generation
         temp_files = asyncio.run(generate_edge_tts_segments())
         
         # Combine audio segments
+        print(f"[SRT] Combining {len(temp_files)} audio segments...")
         combined_audio = combine_audio_segments_edge(temp_files, segments)
+        print(f"[SRT] Combined audio duration: {len(combined_audio)}ms")
         combined_audio.export(srt_output_tts_path, format="wav")
+        print(f"[SRT] Exported to {srt_output_tts_path}")
         
         # Clean up temp files
         for temp_file in temp_files:
