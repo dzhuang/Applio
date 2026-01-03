@@ -18,15 +18,18 @@ services:
       - ./docker_data/models/embedders:/app/rvc/models/embedders
       - ./docker_data/hf_cache:/app/hf_cache
     environment:
-      # Azure TTS API 设置
+      # Azure TTS API settings
       - ENABLE_AZURE_TTS_API=${ENABLE_AZURE_TTS_API:-false}
       - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY:-}
-      - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-eastasia}
-      # TTS 缓存设置
+      - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-eastus}
+      # TTS cache settings
       - SRT_TTS_CACHE_SIZE_MB=${SRT_TTS_CACHE_SIZE_MB:-512}
       - TTS_OUTPUT_CACHE_SIZE_MB=${TTS_OUTPUT_CACHE_SIZE_MB:-256}
-      # 默认音色
-      - DEFAULT_TTS_VOICE=${DEFAULT_TTS_VOICE:-zh-CN-YunxiNeural}
+      # Default TTS voice
+      - DEFAULT_TTS_VOICE=${DEFAULT_TTS_VOICE:-en-US-GuyNeural}
+      # Language settings (i18n)
+      - LANG=en_US
+      - LC_ALL=en_US
     deploy:
       resources:
         reservations:
