@@ -37,6 +37,27 @@ AZURE_TTS_ENABLED = os.environ.get("ENABLE_AZURE_TTS_API", "false").lower() == "
 AZURE_SPEECH_KEY = os.environ.get("AZURE_SPEECH_KEY", "")
 DEFAULT_TTS_VOICE = os.environ.get("DEFAULT_TTS_VOICE", "zh-CN-YunxiNeural")
 
+# Azure 专属音色（仅 API 可用，EdgeTTS 不支持）
+AZURE_EXCLUSIVE_VOICES = [
+    "zh-CN-XiaochenNeural [API]",
+    "zh-CN-XiaohanNeural [API]",
+    "zh-CN-XiaomengNeural [API]",
+    "zh-CN-XiaomoNeural [API]",
+    "zh-CN-XiaoqiuNeural [API]",
+    "zh-CN-XiaorouNeural [API]",
+    "zh-CN-XiaoruiNeural [API]",
+    "zh-CN-XiaoshuangNeural [API]",
+    "zh-CN-XiaoyanNeural [API]",
+    "zh-CN-XiaoyouNeural [API]",
+    "zh-CN-XiaozhenNeural [API]",
+    "zh-CN-YunfengNeural [API]",
+    "zh-CN-YunhaoNeural [API]",
+    "zh-CN-YunjieNeural [API]",
+    "zh-CN-YunyeNeural [API]",
+    "zh-CN-YunzeNeural [API]",
+    "zh-CN-XiaoxiaoMultilingualNeural [API]",
+    "zh-CN-YunyiMultilingualNeural [API]",
+]
 
 with open(
     os.path.join("rvc", "lib", "tools", "tts_voices.json"), "r", encoding="utf-8"
@@ -44,6 +65,10 @@ with open(
     tts_voices_data = json.load(file)
 
 short_names = [voice.get("ShortName", "") for voice in tts_voices_data]
+
+# 当启用 Azure API 时，添加专属音色
+if AZURE_TTS_ENABLED and AZURE_SPEECH_KEY:
+    short_names = AZURE_EXCLUSIVE_VOICES + short_names
 
 
 def process_input(file_path):

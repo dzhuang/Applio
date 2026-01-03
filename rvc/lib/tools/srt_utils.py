@@ -124,9 +124,12 @@ def text_to_speech_azure(
     if not AZURE_AVAILABLE:
         print("Azure Speech SDK not available")
         return None
+    
+    # 移除 [API] 标记（如果存在）
+    actual_voice_name = voice_name.replace(" [API]", "")
         
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
-    speech_config.speech_synthesis_voice_name = voice_name
+    speech_config.speech_synthesis_voice_name = actual_voice_name
     
     # Set output format to WAV (16kHz, 16-bit, mono)
     speech_config.set_speech_synthesis_output_format(
