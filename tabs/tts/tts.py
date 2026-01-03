@@ -83,17 +83,43 @@ def process_input(file_path):
 
 
 def process_srt_input(file_path):
-    """Process uploaded SRT file."""
-    if file_path and file_path.endswith(".srt"):
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                file.read()
-            gr.Info("SRT file loaded successfully!")
-            return file_path, file_path
-        except UnicodeDecodeError:
-            gr.Info("The SRT file must be in UTF-8 encoding.")
+    """Process uploaded SRT file with comprehensive error handling."""
+    if not file_path:
+        gr.Warning("No file selected.")
+        return None, None
+    
+    if not file_path.endswith(".srt"):
+        gr.Warning(f"Invalid file type. Expected .srt, got: {os.path.splitext(file_path)[1]}")
+        return None, None
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            content = file.read()
+        
+        if not content.strip():
+            gr.Warning("SRT file is empty.")
             return None, None
-    return None, None
+        
+        # Basic SRT format validation
+        if "-->" not in content:
+            gr.Warning("Invalid SRT format: No timestamp markers found.")
+            return None, None
+        
+        gr.Info("SRT file loaded successfully!")
+        return file_path, file_path
+    except UnicodeDecodeError as e:
+        gr.Warning(f"Encoding error: SRT file must be UTF-8. Details: {str(e)[:50]}")
+        return None, None
+    except FileNotFoundError:
+        gr.Warning(f"File not found: {file_path}")
+        return None, None
+    except PermissionError:
+        gr.Warning(f"Permission denied: Cannot read file.")
+        return None, None
+    except Exception as e:
+        gr.Warning(f"Error loading SRT file: {str(e)}")
+        print(f"[SRT] Unexpected error: {e}")
+        return None, None
 
 
 def check_azure_api_status(use_azure):
