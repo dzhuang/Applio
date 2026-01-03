@@ -7,8 +7,11 @@ WORKDIR /app
 # 确保环境变量正确指向虚拟环境
 ENV PATH="/app/.venv/bin:$PATH"
 
-# TTS缓存大小限制 (MB)，可在docker-compose中覆盖
+# TTS 相关环境变量
 ENV SRT_TTS_CACHE_SIZE_MB=512
+ENV TTS_OUTPUT_CACHE_SIZE_MB=256
+ENV ENABLE_AZURE_TTS_API=false
+ENV DEFAULT_TTS_VOICE=zh-CN-YunxiNeural
 
 # 复制新增加的工具文件、修改过的核心逻辑和UI代码
 COPY rvc/lib/tools/srt_utils.py /app/rvc/lib/tools/srt_utils.py

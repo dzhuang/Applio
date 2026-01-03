@@ -11,17 +11,22 @@ services:
       - ./docker_data/logs:/app/logs
       - ./docker_data/dataset:/app/dataset
       - ./docker_data/tts_cache:/app/assets/tts_cache
+      - ./docker_data/tts_output_cache:/app/assets/tts_output_cache
       - ./docker_data/weights:/app/assets/weights
       - ./docker_data/models/pretraineds:/app/rvc/models/pretraineds
       - ./docker_data/models/predictors:/app/rvc/models/predictors
       - ./docker_data/models/embedders:/app/rvc/models/embedders
       - ./docker_data/hf_cache:/app/hf_cache
     environment:
-      # Azure Speech API for SRT timing sync (optional)
+      # Azure TTS API 设置
+      - ENABLE_AZURE_TTS_API=${ENABLE_AZURE_TTS_API:-false}
       - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY:-}
-      - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-}
-      # TTS cache size (optional)
+      - AZURE_SERVICE_REGION=${AZURE_SERVICE_REGION:-eastasia}
+      # TTS 缓存设置
       - SRT_TTS_CACHE_SIZE_MB=${SRT_TTS_CACHE_SIZE_MB:-512}
+      - TTS_OUTPUT_CACHE_SIZE_MB=${TTS_OUTPUT_CACHE_SIZE_MB:-256}
+      # 默认音色
+      - DEFAULT_TTS_VOICE=${DEFAULT_TTS_VOICE:-zh-CN-YunxiNeural}
     deploy:
       resources:
         reservations:

@@ -23,8 +23,19 @@ from tabs.inference.inference import (
     filter_dropdowns,
     update_filter_visibility,
 )
+from rvc.lib.tools.tts_cache import (
+    clear_all_caches,
+    get_cache_stats,
+    CACHE_DIR,
+    OUTPUT_CACHE_DIR,
+)
 
 i18n = I18nAuto()
+
+# Azure API 全局开关
+AZURE_TTS_ENABLED = os.environ.get("ENABLE_AZURE_TTS_API", "false").lower() == "true"
+AZURE_SPEECH_KEY = os.environ.get("AZURE_SPEECH_KEY", "")
+DEFAULT_TTS_VOICE = os.environ.get("DEFAULT_TTS_VOICE", "zh-CN-YunxiNeural")
 
 
 with open(
@@ -195,9 +206,11 @@ def tts_tab():
                 label=i18n("Use Azure API (Timing Sync)"),
                 info=i18n("Enable to sync audio with subtitle timing. Requires AZURE_SPEECH_KEY env var."),
                 value=False,
+                visible=AZURE_TTS_ENABLED and bool(AZURE_SPEECH_KEY),
             )
             srt_mode_status = gr.Markdown(
-                value=i18n("ℹ️ Using EdgeTTS (no timing sync)")
+                value=i18n("ℹ️ Using EdgeTTS (no timing sync)"),
+                visible=AZURE_TTS_ENABLED and bool(AZURE_SPEECH_KEY),
             )
     
     tabs.select(fn=lambda evt: evt.index if evt is not None else 0, outputs=[active_tab])
@@ -240,6 +253,40 @@ def tts_tab():
                     maximum=10240,
                     precision=0,
                 )
+            
+            # Cache cleanup buttons
+            cache_status = gr.Textbox(
+                label=i18n("Cache Status"),
+                value="",
+                interactive=False,
+            )
+            with gr.Row():
+                clear_1h_btn = gr.Button(i18n("Clear 1 Hour Ago"))
+                clear_2h_btn = gr.Button(i18n("Clear 2 Hours Ago"))
+                clear_4h_btn = gr.Button(i18n("Clear 4 Hours Ago"))
+                clear_8h_btn = gr.Button(i18n("Clear 8 Hours Ago"))
+                clear_24h_btn = gr.Button(i18n("Clear 24 Hours Ago"))
+                clear_all_btn = gr.Button(i18n("Clear All Cache"), variant="stop")
+            
+            def do_clear_cache(hours=None):
+                result = clear_all_caches(hours)
+                api_stats = get_cache_stats(CACHE_DIR)
+                output_stats = get_cache_stats(OUTPUT_CACHE_DIR)
+                if hours:
+                    msg = i18n("Cleared cache older than {} hours").format(hours)
+                else:
+                    msg = i18n("Cleared all cache")
+                msg += f": API({result['api_cache_cleared']}), Output({result['output_cache_cleared']})"
+                msg += f"\n{i18n('Current')}: API={api_stats['size_mb']:.1f}MB ({api_stats['file_count']} {i18n('files')}), Output={output_stats['size_mb']:.1f}MB ({output_stats['file_count']} {i18n('files')})"
+                return msg
+            
+            clear_1h_btn.click(fn=lambda: do_clear_cache(1), outputs=[cache_status])
+            clear_2h_btn.click(fn=lambda: do_clear_cache(2), outputs=[cache_status])
+            clear_4h_btn.click(fn=lambda: do_clear_cache(4), outputs=[cache_status])
+            clear_8h_btn.click(fn=lambda: do_clear_cache(8), outputs=[cache_status])
+            clear_24h_btn.click(fn=lambda: do_clear_cache(24), outputs=[cache_status])
+            clear_all_btn.click(fn=lambda: do_clear_cache(None), outputs=[cache_status])
+            
             sid = gr.Dropdown(
                 label=i18n("Speaker ID"),
                 info=i18n("Select the speaker ID to use for the conversion."),
