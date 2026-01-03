@@ -13,12 +13,11 @@ ENV TTS_OUTPUT_CACHE_SIZE_MB=256
 ENV ENABLE_AZURE_TTS_API=false
 ENV DEFAULT_TTS_VOICE=zh-CN-YunxiNeural
 
-# 复制新增加的工具文件、修改过的核心逻辑和UI代码
-COPY rvc/lib/tools/srt_utils.py /app/rvc/lib/tools/srt_utils.py
-COPY rvc/lib/tools/tts.py /app/rvc/lib/tools/tts.py
-COPY rvc/lib/tools/tts_cache.py /app/rvc/lib/tools/tts_cache.py
+# 复制修改过的文件（目录级别）
+COPY rvc/lib/tools/ /app/rvc/lib/tools/
+COPY tabs/tts/ /app/tabs/tts/
+COPY assets/i18n/languages/ /app/assets/i18n/languages/
 COPY core.py /app/core.py
-COPY tabs/tts/tts.py /app/tabs/tts/tts.py
 COPY requirements.txt /app/requirements.txt
 
 # 安装新增加的依赖项
