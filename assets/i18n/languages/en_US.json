@@ -372,5 +372,20 @@
     "Volume Envelope": "Volume Envelope",
     "Volume level below which audio is treated as silence and not processed. Helps to save CPU resources and reduce background noise.": "Volume level below which audio is treated as silence and not processed. Helps to save CPU resources and reduce background noise.",
     "You can also use a custom path.": "You can also use a custom path.",
-    "[Support](https://discord.gg/urxFjYmYYh) — [GitHub](https://github.com/IAHispano/Applio)": "[Support](https://discord.gg/urxFjYmYYh) — [GitHub](https://github.com/IAHispano/Applio)"
+    "[Support](https://discord.gg/urxFjYmYYh) — [GitHub](https://github.com/IAHispano/Applio)": "[Support](https://discord.gg/urxFjYmYYh) — [GitHub](https://github.com/IAHispano/Applio)",
+    "Cache Status": "Cache Status",
+    "Clear 1 Hour Ago": "Clear 1 Hour Ago",
+    "Clear 2 Hours Ago": "Clear 2 Hours Ago",
+    "Clear 4 Hours Ago": "Clear 4 Hours Ago",
+    "Clear 8 Hours Ago": "Clear 8 Hours Ago",
+    "Clear 24 Hours Ago": "Clear 24 Hours Ago",
+    "Clear All Cache": "Clear All Cache",
+    "Cleared cache older than {} hours": "Cleared cache older than {} hours",
+    "Cleared all cache": "Cleared all cache",
+    "Current": "Current",
+    "files": "files",
+    "Use TTS Cache": "Use TTS Cache",
+    "Cache TTS audio segments to speed up repeated conversions.": "Cache TTS audio segments to speed up repeated conversions.",
+    "Max Cache Size (MB)": "Max Cache Size (MB)",
+    "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.": "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var."
 }
