@@ -387,5 +387,14 @@
     "Use TTS Cache": "Use TTS Cache",
     "Cache TTS audio segments to speed up repeated conversions.": "Cache TTS audio segments to speed up repeated conversions.",
     "Max Cache Size (MB)": "Max Cache Size (MB)",
-    "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.": "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var."
+    "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.": "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.",
+    "SRT to Speech": "SRT to Speech",
+    "Upload SRT File": "Upload SRT File",
+    "SRT File Path": "SRT File Path",
+    "Path to the SRT subtitle file": "Path to the SRT subtitle file",
+    "Use Azure API (Timing Sync)": "Use Azure API (Timing Sync)",
+    "Enable to sync audio with subtitle timing. Requires AZURE_SPEECH_KEY env var.": "Enable to sync audio with subtitle timing. Requires AZURE_SPEECH_KEY env var.",
+    "ℹ️ Using EdgeTTS (no timing sync)": "ℹ️ Using EdgeTTS (no timing sync)",
+    "✅ Azure API enabled. Timing sync is active.": "✅ Azure API enabled. Timing sync is active.",
+    "⚠️ AZURE_SPEECH_KEY or AZURE_SERVICE_REGION not found. Using EdgeTTS.": "⚠️ AZURE_SPEECH_KEY or AZURE_SERVICE_REGION not found. Using EdgeTTS."
 }

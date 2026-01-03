@@ -387,5 +387,14 @@
     "Use TTS Cache": "使用 TTS 缓存",
     "Cache TTS audio segments to speed up repeated conversions.": "缓存 TTS 音频片段以加速重复转换。",
     "Max Cache Size (MB)": "最大缓存大小 (MB)",
-    "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.": "FIFO 清理前的最大缓存大小。可通过 SRT_TTS_CACHE_SIZE_MB 环境变量设置。"
+    "Maximum cache size before FIFO cleanup. Set via SRT_TTS_CACHE_SIZE_MB env var.": "FIFO 清理前的最大缓存大小。可通过 SRT_TTS_CACHE_SIZE_MB 环境变量设置。",
+    "SRT to Speech": "字幕转语音",
+    "Upload SRT File": "上传 SRT 文件",
+    "SRT File Path": "SRT 文件路径",
+    "Path to the SRT subtitle file": "SRT 字幕文件的路径",
+    "Use Azure API (Timing Sync)": "使用 Azure API（时间同步）",
+    "Enable to sync audio with subtitle timing. Requires AZURE_SPEECH_KEY env var.": "启用以使音频与字幕时间同步。需要设置 AZURE_SPEECH_KEY 环境变量。",
+    "ℹ️ Using EdgeTTS (no timing sync)": "ℹ️ 使用 EdgeTTS（无时间同步）",
+    "✅ Azure API enabled. Timing sync is active.": "✅ Azure API 已启用。时间同步已激活。",
+    "⚠️ AZURE_SPEECH_KEY or AZURE_SERVICE_REGION not found. Using EdgeTTS.": "⚠️ 未找到 AZURE_SPEECH_KEY 或 AZURE_SERVICE_REGION。使用 EdgeTTS。"
 }
