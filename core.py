@@ -474,8 +474,15 @@ def run_srt_tts_script(
     if use_azure_api and not azure_available:
         print("Warning: Azure API requested but not available. Using EdgeTTS.")
     
-    # Use a unique output path for SRT to avoid conflict with standard TTS
-    srt_output_tts_path = output_tts_path.replace(".wav", "_srt.wav")
+    # Generate content hash for unique output filenames
+    # This prevents browser/Gradio cache issues when converting different SRT files
+    import hashlib
+    content_text = "".join([content for _, _, content in segments])
+    content_hash = hashlib.md5(content_text.encode('utf-8')).hexdigest()[:8]
+    
+    # Use unique output paths based on content hash
+    srt_output_tts_path = output_tts_path.replace(".wav", f"_srt_{content_hash}.wav")
+    unique_rvc_path = output_rvc_path.replace(".wav", f"_srt_{content_hash}.wav")
     
     # Clean up existing output file
     if os.path.exists(srt_output_tts_path) and os.path.abspath(srt_output_tts_path).startswith(
@@ -590,7 +597,7 @@ def run_srt_tts_script(
             protect=protect,
             f0_method=f0_method,
             audio_input_path=srt_output_tts_path,
-            audio_output_path=output_rvc_path,
+            audio_output_path=unique_rvc_path,
             model_path=pth_path,
             index_path=index_path,
             split_audio=split_audio,
@@ -626,7 +633,7 @@ def run_srt_tts_script(
         return error_msg, None
     
     mode_str = "Azure TTS (timing sync)" if use_azure else "EdgeTTS (sequential)"
-    return f"SRT converted successfully using {mode_str}.", output_rvc_path.replace(
+    return f"SRT converted successfully using {mode_str}.", unique_rvc_path.replace(
         ".wav", f".{export_format.lower()}"
     )
 
