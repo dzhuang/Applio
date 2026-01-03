@@ -137,11 +137,11 @@ def text_to_speech_azure(
     )
     
     # Build SSML with prosody rate
-    lang_code = voice_name.split('-')[0] + '-' + voice_name.split('-')[1]
+    lang_code = actual_voice_name.split('-')[0] + '-' + actual_voice_name.split('-')[1]
     ssml_string = f"""
     <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' 
            xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='{lang_code}'>
-        <voice name='{voice_name}'>
+        <voice name='{actual_voice_name}'>
             <prosody rate='{prosody_rate}'>
                 {text}
             </prosody>
